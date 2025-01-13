@@ -98,6 +98,48 @@ class e2sm_rc_module(object):
         control_msg = self.e2sm_rc_compiler.pack_ric_control_msg(control_msg_dict)
         payload = self._build_ric_control_request(control_header, control_msg, ack_request)
         self.parent.rmr_send(e2_node_id, payload, 12040, retries=1)
+    
+    def send_control_request_style_3_action_1(self, e2_node_id, ue_id=0, source_pci=1, target_pci=2, ack_request=1):
+        ue_id = ('gNB-DU-UEID', {'gNB-CU-UE-F1AP-ID': ue_id})
+        control_header = self.e2sm_rc_compiler.pack_ric_control_header_f1(style_type=3, control_action_id=1, ue_id_tuple=ue_id)
+
+        control_msg_dict = {'ric-controlMessage-formats': ('controlMessage-Format1',
+                                {'ranP-List': [
+                                    # RRM Policy Ratio List, LIST
+                                    {'ranParameter-ID': 1, 'ranParameter-valueType': ('ranP-Choice-List', {'ranParameter-List': {'list-of-ranParameter': [{'sequence-of-ranParameters': [
+                                        #>RRM Policy Ratio Group, STRUCTURE
+                                        {'ranParameter-ID': 2, 'ranParameter-valueType': ('ranP-Choice-Structure', {'ranParameter-Structure': {'sequence-of-ranParameters': [
+                                            #>>RRM Policy, STRUCTURE
+                                            {'ranParameter-ID': 3, 'ranParameter-valueType': ('ranP-Choice-Structure', {'ranParameter-Structure': {'sequence-of-ranParameters': [
+                                                #Note that ID = 4 is missing in the spec.
+                                                #>>RRM Policy Member List, LIST
+                                                {'ranParameter-ID': 5, 'ranParameter-valueType': ('ranP-Choice-List', {'ranParameter-List': {'list-of-ranParameter': [{'sequence-of-ranParameters': [
+                                                    #>>>>RRM Policy Member, STRUCTURE
+                                                    {'ranParameter-ID': 6, 'ranParameter-valueType': ('ranP-Choice-Structure', {'ranParameter-Structure': {'sequence-of-ranParameters': [
+                                                        #>>>>>PLMN Identity, ELEMENT
+                                                        {'ranParameter-ID': 7, 'ranParameter-valueType': ('ranP-Choice-ElementFalse', {'ranParameter-value': ('valueOctS', b'00101')})},
+                                                        #>>>>>S-NSSAI, STRUCTURE
+                                                        {'ranParameter-ID': 8, 'ranParameter-valueType': ('ranP-Choice-Structure', {'ranParameter-Structure': {'sequence-of-ranParameters': [
+                                                                #>>>>>>SST, ELEMENT
+                                                                {'ranParameter-ID': 9, 'ranParameter-valueType': ('ranP-Choice-ElementFalse', {'ranParameter-value': ('valueOctS', b'0')})},
+                                                                #>>>>>>SD, ELEMENT
+                                                                {'ranParameter-ID': 10, 'ranParameter-valueType': ('ranP-Choice-ElementFalse', {'ranParameter-value': ('valueOctS', b'0')})}]
+                                                            }})}]}})}]}]}})}]}})},
+                                            #>>Min PRB Policy Ratio, ELEMENT
+                                            {'ranParameter-ID': 11, 'ranParameter-valueType': ('ranP-Choice-ElementFalse', {'ranParameter-value': ('valueInt', 0)})},
+                                            #>>Max PRB Policy Ratio, ELEMENT
+                                            {'ranParameter-ID': 12, 'ranParameter-valueType': ('ranP-Choice-ElementFalse', {'ranParameter-value': ('valueInt', source_pci)})},
+                                            #>>Dedicated PRB Policy Ratio, ELEMENT
+                                            {'ranParameter-ID': 13, 'ranParameter-valueType': ('ranP-Choice-ElementFalse', {'ranParameter-value': ('valueInt', target_pci)})}
+                                        ]}})}
+                                    ]}]}})}
+                                ]}
+                            )}
+
+        control_msg = self.e2sm_rc_compiler.pack_ric_control_msg(control_msg_dict)
+        payload = self._build_ric_control_request(control_header, control_msg, ack_request)
+        self.parent.rmr_send(e2_node_id, payload, 12040, retries=1)
 
     # Alias with a nice name
     control_slice_level_prb_quota = send_control_request_style_2_action_6
+    control_handover              = send_control_request_style_3_action_1

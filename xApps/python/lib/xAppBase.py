@@ -3,6 +3,7 @@ import time
 import json
 import logging
 import threading
+import datetime
 
 import ricxappframe
 from ricxappframe.xapp_frame import rmr
@@ -20,6 +21,17 @@ class SubscriptionWrapper(object):
         self.subscription_id = None
         self.e2_event_instance_id = None  # Subscription ID used in RIC indication msgs
         self.callback_func = None
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler("xApp.log", mode="w"),
+        logging.StreamHandler()
+    ]
+)
+logging.Formatter.formatTime = lambda self, record, datefmt=None: datetime.datetime.fromtimestamp(record.created).isoformat(sep=' ', timespec='microseconds')
 
 class xAppBase(object):
     def __init__(self, config=None, http_server_port=8090, rmr_port=4560, rmr_flags=0x00):
@@ -142,6 +154,7 @@ class xAppBase(object):
         rmr.rmr_set_meid(sbuf, e2_node_id.encode("utf8"))
         #print("Pre send summary: {}".format(rmr.message_summary(sbuf)))
         sbuf = rmr.rmr_send_msg(self.rmr_client, sbuf)
+        logging.info(f"Sent RIC Control Request to E2 node ID: {e2_node_id}")
 
     def _run(self):
         while self.running:
@@ -179,9 +192,9 @@ class xAppBase(object):
                         print("Error during RIC indication decoding: {}".format(e))
                         pass
                 if (summary['message type'] == 12041):
-                    print("Received RIC_CONTROL_ACK")
+                    logging.info("Received RIC_CONTROL_ACK")
                 if (summary['message type'] == 12042):
-                    print("Received RIC_CONTROL_FAILURE")
+                    logging.info("Received RIC_CONTROL_FAILURE")
 
             rmr.rmr_free_msg(sbuf)
 
